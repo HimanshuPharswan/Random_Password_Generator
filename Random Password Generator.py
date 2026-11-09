@@ -1,6 +1,6 @@
 
-import random #Libraries
-import string #Libraries
+import secrets #Library for secure random choices (safer than random for passwords)
+import string #Library
 
 # Define character sets (lowercase, uppercase, digits, punctuation or special characters)
 lowercase_letters = string.ascii_lowercase
@@ -14,8 +14,8 @@ all_characters = lowercase_letters + uppercase_letters + digits + special_charac
 # Setting password length
 password_length = 12
 
-# Generate a random password
-password = ''.join(random.sample(all_characters, password_length))
+# Generate a random password (characters can repeat, which makes it harder to guess)
+password = ''.join(secrets.choice(all_characters) for _ in range(password_length))
 
 # Display the generated password
 print("Generated Password:", password)

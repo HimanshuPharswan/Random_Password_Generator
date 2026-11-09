@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Password Generator</title>
+    <meta name="description" content="Make a strong random password in your browser. Choose the length and characters, then copy it. Nothing is saved or sent anywhere.">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <meta name="theme-color" content="#f6f1e7" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#14110d" media="(prefers-color-scheme: dark)">
+
+    <script>
+        // Applies a saved theme before the page draws, so the wrong theme never flashes.
+        try {
+            const savedTheme = localStorage.getItem('pw-theme');
+            if (savedTheme === 'light' || savedTheme === 'dark') {
+                document.documentElement.setAttribute('data-theme', savedTheme);
+            }
+        } catch (storageError) {
+            // Storage is blocked, so the page follows the system theme instead.
+        }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;600&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@500;700&display=swap">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="page">
+        <header class="topbar">
+            <span class="wordmark">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="4" y="10" width="16" height="11" rx="2.5"/>
+                    <path d="M8 10V7a4 4 0 0 1 8 0v3"/>
+                    <circle cx="12" cy="15.5" r="1.6"/>
+                </svg>
+                Password Generator
+            </span>
+
+            <button type="button" class="theme-switch" id="theme-switch" aria-label="Switch to light theme">
+                <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="12" cy="12" r="4"/>
+                    <path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.900 4.900l1.400 1.400M17.700 17.700l1.400 1.400M4.900 19.100l1.400-1.400M17.700 6.300l1.400-1.400"/>
+                </svg>
+                <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M21 13A9 9 0 1 1 11 3a7 7 0 0 0 10 10z"/>
+                </svg>
+            </button>
+        </header>
+
+        <main>
+            <div class="hero">
+                <h1>A password nobody <em>can guess</em>.</h1>
+                <p class="lead">Pick a length and the kinds of characters you want. Your password is made right here in your browser, and it's never saved or sent anywhere.</p>
+            </div>
+
+            <noscript>
+                <p class="noscript">This tool needs JavaScript. Turn it on in your browser settings, then reload the page.</p>
+            </noscript>
+
+            <section class="vault" aria-label="Password generator">
+                <div class="readout">
+                    <output id="password" class="password" for="length" aria-label="Generated password"></output>
+
+                    <div class="readout-actions">
+                        <button type="button" class="icon-button" id="regenerate" aria-label="Make a new password">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M20 11a8 8 0 1 0-2.300 5.700"/>
+                                <path d="M20 4v7h-7"/>
+                            </svg>
+                        </button>
+                        <button type="button" class="copy-button" id="copy">
+                            <svg viewBox="0 0 24 24" aria-hidden="true">
+                                <rect x="8" y="8" width="12" height="12" rx="2"/>
+                                <path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>
+                            </svg>
+                            <span id="copy-label">Copy</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="strength" id="strength">
+                    <div class="meter" aria-hidden="true">
+                        <span></span><span></span><span></span><span></span>
+                    </div>
+                    <p><strong id="strength-label">Strong</strong> <span id="strength-bits" class="mono"></span></p>
+                </div>
+
+                <div class="options">
+                    <div class="length-row">
+                        <label for="length">Length</label>
+                        <input type="number" id="length-number" min="4" max="64" value="16" inputmode="numeric" aria-label="Length in characters">
+                    </div>
+                    <input type="range" id="length" min="4" max="64" value="16">
+
+                    <fieldset>
+                        <legend>Include</legend>
+                        <!-- To add a character set: copy a label here and add its details to CHARACTER_SETS in script.js -->
+                        <label class="toggle"><input type="checkbox" data-set="lowercase" checked><span class="track"></span>Lowercase <code>abc</code></label>
+                        <label class="toggle"><input type="checkbox" data-set="uppercase" checked><span class="track"></span>Uppercase <code>ABC</code></label>
+                        <label class="toggle"><input type="checkbox" data-set="digits" checked><span class="track"></span>Numbers <code class="is-digit">123</code></label>
+                        <label class="toggle"><input type="checkbox" data-set="symbols" checked><span class="track"></span>Symbols <code class="is-symbol">#$&amp;</code></label>
+                    </fieldset>
+
+                    <label class="toggle wide"><input type="checkbox" id="avoid-similar"><span class="track"></span><span>Leave out look-alike characters <code>I&nbsp;l&nbsp;1&nbsp;|&nbsp;O&nbsp;0&nbsp;o</code></span></label>
+
+                    <p id="options-error" class="options-error" role="alert" hidden>Keep at least one kind of character turned on.</p>
+                </div>
+
+                <p id="status" class="visually-hidden" role="status"></p>
+            </section>
+
+            <section class="notes" aria-label="Password tips">
+                <article>
+                    <span class="note-number">01</span>
+                    <h2>Length beats tricks</h2>
+                    <p>Every extra character multiplies the guesses an attacker needs. Aim for 16 or more for anything important.</p>
+                </article>
+                <article>
+                    <span class="note-number">02</span>
+                    <h2>One password per account</h2>
+                    <p>If one site leaks, a reused password unlocks the others. Make a new one for each account.</p>
+                </article>
+                <article>
+                    <span class="note-number">03</span>
+                    <h2>Let a manager remember</h2>
+                    <p>Store your passwords in a password manager, so they can be long and random without you memorizing them.</p>
+                </article>
+            </section>
+        </main>
+
+        <footer>
+            <p>Passwords come from your browser's secure random generator.</p>
+            <a href="https://github.com/HimanshuPharswan/Random_Password_Generator">Source on GitHub</a>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
