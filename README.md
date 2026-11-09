@@ -9,6 +9,7 @@ The repository also has the original Python version, `Random Password Generator.
 - Length from 4 to 64 characters, with a slider and a number box
 - Switches for lowercase letters, uppercase letters, numbers and symbols
 - Every kind you switch on appears at least once in the password
+- Optional field for your own word, such as a name, placed at the start, the end or anywhere in the password
 - Option to leave out look-alike characters (`I l 1 | O 0 o`)
 - Strength meter that shows how many bits of randomness the password has
 - Numbers and symbols in their own colors, so the password is easier to read
@@ -54,14 +55,16 @@ Edit the values at the top of `style.css`:
 |---|---|
 | `--bg` | Page background |
 | `--surface` | Generator panel |
-| `--sunken` | Box behind the password |
-| `--ink` | Main text and letters in the password |
+| `--sunken` | Dark box behind the password |
+| `--on-sunken` | Letters in the password |
+| `--ink` | Main text |
 | `--muted` | Secondary text |
 | `--line` | Borders and dividers |
 | `--accent` | Copy button, switches, slider and links |
 | `--on-accent` | Text on the Copy button |
 | `--digit` | Numbers in the password |
 | `--symbol` | Symbols in the password |
+| `--word` | Your own word in the password |
 | `--weak`, `--fair`, `--strong` | Strength meter colors |
 
 The dark theme has its own copy of these colors. It appears **twice**, right below the light colors, so change both copies.
@@ -94,6 +97,7 @@ These are under `Settings` at the top of `script.js`:
 | `LOOK_ALIKES` | Characters removed when "Leave out look-alike characters" is on |
 | `MIN_LENGTH`, `MAX_LENGTH` | Shortest and longest length allowed |
 | `STRENGTH_LEVELS` | The bits needed for each strength label |
+| `MIN_RANDOM_WITH_WORD` | Fewest random characters kept next to your own word |
 | `COPIED_TIME` | How long the Copy button says "Copied", in milliseconds |
 
 If you change `MIN_LENGTH` or `MAX_LENGTH`, also change `min` and `max` on the `<input id="length">` and `<input id="length-number">` lines in `index.html`. To change the starting length, edit `value="16"` on both of those lines.
@@ -114,9 +118,17 @@ If you change `MIN_LENGTH` or `MAX_LENGTH`, also change `min` and `max` on the `
 
 Leave out `checked` if the new kind should start switched off.
 
+### Change the custom word field
+
+- **Field:** it's in `<div class="word-field">` in `index.html`. The `maxlength="24"` on the `<input id="word">` line sets the longest word allowed.
+- **Start, Anywhere and End:** these are the three `name="place"` buttons next to it. To change which one is picked first, move `checked` to another of them.
+- **Behavior:** `addWord` in `script.js` puts the word into the password. The word counts toward the length. If it doesn't leave room for `MIN_RANDOM_WITH_WORD` random characters, the password grows and the note under the field says so.
+
 ### How strength is measured
 
 The page multiplies the length by `log2` of the number of possible characters. The result is the bits of randomness: each extra bit doubles the guesses an attacker needs. The default 16 characters with every kind switched on gives about 105 bits.
+
+Your own word isn't counted, because people often pick words an attacker could guess, such as names. The meter shows the strength of the random characters only.
 
 ### Change the theme button
 
@@ -141,8 +153,9 @@ Before publishing:
 
 1. Try the shortest and longest lengths, and type a number outside the range into the length box.
 2. Switch the kinds of characters on and off, including all of them off.
-3. Select **Copy** and paste the password somewhere to check it.
-4. Try the page on a phone, or in a narrow window, in both themes.
+3. Type a word, try Start, Anywhere and End, and try a word longer than the chosen length.
+4. Select **Copy** and paste the password somewhere to check it.
+5. Try the page on a phone, or in a narrow window, in both themes.
 
 ## Publish your changes
 

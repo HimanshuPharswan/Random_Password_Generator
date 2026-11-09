@@ -23,6 +23,10 @@ const STRENGTH_LEVELS = [
     { below: Infinity, label: 'Very strong' }
 ];
 
+// Fewest random characters kept next to your own word. If the word doesn't leave room for these,
+// the password gets longer than the chosen length.
+const MIN_RANDOM_WITH_WORD = 4;
+
 // How long the Copy button says "Copied", in milliseconds
 const COPIED_TIME = 1600;
 
@@ -41,6 +45,10 @@ const copyButton = document.getElementById('copy');
 const copyLabel = document.getElementById('copy-label');
 const regenerateButton = document.getElementById('regenerate');
 const statusMessage = document.getElementById('status');
+const wordInput = document.getElementById('word');
+const placeRadios = document.querySelectorAll('input[name="place"]');
+const wordNote = document.getElementById('word-note');
+const WORD_NOTE_TEXT = wordNote.textContent;
 const themeSwitch = document.getElementById('theme-switch');
 
 let currentPassword = '';
@@ -88,23 +96,43 @@ function chosenLength() {
     return Math.min(MAX_LENGTH, Math.max(MIN_LENGTH, value));
 }
 
-function makePassword(length, sets) {
+function makeRandomPart(length, sets) {
     const allCharacters = sets.join('');
     // One character from each chosen kind, so every kind you switched on appears
     const characters = sets.map(randomCharacter);
     while (characters.length < length) {
         characters.push(randomCharacter(allCharacters));
     }
-    return shuffle(characters).slice(0, length).join('');
+    return shuffle(characters).slice(0, length);
 }
 
-function showPassword(password) {
+function chosenWord() {
+    return wordInput.value.trim();
+}
+
+function chosenPlace() {
+    const checked = document.querySelector('input[name="place"]:checked');
+    return checked ? checked.value : 'anywhere';
+}
+
+// Puts the word at the start, the end, or a random spot among the random characters.
+// Returns the password and where the word starts in it.
+function addWord(randomPart, word, place) {
+    let at = randomIndex(randomPart.length + 1);
+    if (place === 'start') at = 0;
+    if (place === 'end') at = randomPart.length;
+    const password = randomPart.slice(0, at).join('') + word + randomPart.slice(at).join('');
+    return { password, wordStart: at };
+}
+
+function showPassword(password, wordStart = -1, wordLength = 0) {
     passwordOutput.replaceChildren();
     Array.from(password).forEach((character, i) => {
         const span = document.createElement('span');
         span.textContent = character;
         span.style.setProperty('--i', i);
-        if (CHARACTER_SETS.digits.includes(character)) span.className = 'is-digit';
+        if (i >= wordStart && i < wordStart + wordLength) span.className = 'is-word';
+        else if (CHARACTER_SETS.digits.includes(character)) span.className = 'is-digit';
         else if (CHARACTER_SETS.symbols.includes(character)) span.className = 'is-symbol';
         passwordOutput.append(span);
     });
@@ -130,11 +158,21 @@ function generate(announceIt) {
     if (!hasSets) return;
 
     const length = chosenLength();
-    currentPassword = makePassword(length, sets);
-    showPassword(currentPassword);
-    showStrength(length, sets.join('').length);
+    const word = chosenWord();
+    const wordLength = Array.from(word).length;
+    const randomCount = word ? Math.max(length - wordLength, MIN_RANDOM_WITH_WORD) : length;
+    const randomPart = makeRandomPart(randomCount, sets);
+    const { password, wordStart } = word ? addWord(randomPart, word, chosenPlace()) : { password: randomPart.join(''), wordStart: -1 };
+    const total = Array.from(password).length;
+
+    currentPassword = password;
+    showPassword(password, wordStart, wordLength);
+    showStrength(randomCount, sets.join('').length);
+    wordNote.textContent = total > length
+        ? `Your word needs room for at least ${MIN_RANDOM_WITH_WORD} random characters, so this password is ${total} characters long.`
+        : WORD_NOTE_TEXT;
     resetCopyButton();
-    if (announceIt) announce(`New ${length}-character password made.`);
+    if (announceIt) announce(`New ${total}-character password made.`);
 }
 
 function announce(message) {
@@ -171,6 +209,8 @@ lengthNumber.addEventListener('change', () => {
 // ===== Switches and buttons =====
 setSwitches.forEach(input => input.addEventListener('change', () => generate(true)));
 avoidSimilar.addEventListener('change', () => generate(true));
+wordInput.addEventListener('input', () => generate(false));
+placeRadios.forEach(input => input.addEventListener('change', () => generate(true)));
 regenerateButton.addEventListener('click', () => generate(true));
 
 // Enter in the length box makes a new password
