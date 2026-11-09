@@ -115,25 +115,25 @@ function chosenPlace() {
     return checked ? checked.value : 'anywhere';
 }
 
-// Puts the word at the start, the end, or a random spot among the random characters.
-// Returns the password and where the word starts in it.
-function addWord(randomPart, word, place) {
-    let at = randomIndex(randomPart.length + 1);
-    if (place === 'start') at = 0;
-    if (place === 'end') at = randomPart.length;
-    const password = randomPart.slice(0, at).join('') + word + randomPart.slice(at).join('');
-    return { password, wordStart: at };
+// Where the word goes among the random characters: the start, the end, or a random spot
+function wordPosition(randomCount, place) {
+    if (place === 'start') return 0;
+    if (place === 'end') return randomCount;
+    return randomIndex(randomCount + 1);
 }
 
-function showPassword(password, wordStart = -1, wordLength = 0) {
+// Shows each random character in its own color. The word stays in one piece,
+// so joined letters (such as Hindi text or emoji) are drawn correctly.
+function showPassword(randomPart, wordAt, word) {
     passwordOutput.replaceChildren();
-    Array.from(password).forEach((character, i) => {
+    const pieces = [...randomPart.slice(0, wordAt), word, ...randomPart.slice(wordAt)].filter(Boolean);
+    pieces.forEach((piece, i) => {
         const span = document.createElement('span');
-        span.textContent = character;
+        span.textContent = piece;
         span.style.setProperty('--i', i);
-        if (i >= wordStart && i < wordStart + wordLength) span.className = 'is-word';
-        else if (CHARACTER_SETS.digits.includes(character)) span.className = 'is-digit';
-        else if (CHARACTER_SETS.symbols.includes(character)) span.className = 'is-symbol';
+        if (piece === word && i === wordAt) span.className = 'is-word';
+        else if (CHARACTER_SETS.digits.includes(piece)) span.className = 'is-digit';
+        else if (CHARACTER_SETS.symbols.includes(piece)) span.className = 'is-symbol';
         passwordOutput.append(span);
     });
     // Restarts the drop-in animation
@@ -155,6 +155,10 @@ function generate(announceIt) {
     const hasSets = sets.length > 0;
     optionsError.hidden = hasSets;
     copyButton.disabled = !hasSets;
+    regenerateButton.disabled = !hasSets;
+    // Dims the last password, so it doesn't look like a match for the current choices
+    passwordOutput.classList.toggle('is-stale', !hasSets);
+    strengthBox.classList.toggle('is-stale', !hasSets);
     if (!hasSets) return;
 
     const length = chosenLength();
@@ -162,11 +166,12 @@ function generate(announceIt) {
     const wordLength = Array.from(word).length;
     const randomCount = word ? Math.max(length - wordLength, MIN_RANDOM_WITH_WORD) : length;
     const randomPart = makeRandomPart(randomCount, sets);
-    const { password, wordStart } = word ? addWord(randomPart, word, chosenPlace()) : { password: randomPart.join(''), wordStart: -1 };
-    const total = Array.from(password).length;
+    const wordAt = word ? wordPosition(randomCount, chosenPlace()) : randomCount;
+    const password = randomPart.slice(0, wordAt).join('') + word + randomPart.slice(wordAt).join('');
+    const total = randomCount + wordLength;
 
     currentPassword = password;
-    showPassword(password, wordStart, wordLength);
+    showPassword(randomPart, wordAt, word);
     showStrength(randomCount, sets.join('').length);
     wordNote.textContent = total > length
         ? `Your word needs room for at least ${MIN_RANDOM_WITH_WORD} random characters, so this password is ${total} characters long.`

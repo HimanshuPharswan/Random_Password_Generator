@@ -438,6 +438,27 @@ footer {
 footer p { margin: 0; }
 footer a { display: inline-flex; align-items: center; min-height: 44px; }
 
+/* Shown when every kind of character is switched off */
+.password.is-stale, .strength.is-stale { opacity: 0.35; }
+button:disabled { cursor: not-allowed; opacity: 0.5; }
+
+/* Windows High Contrast and other forced color modes: keep switch states visible */
+@media (forced-colors: active) {
+    .track { border: 2px solid CanvasText; }
+    .track::after { background: CanvasText; forced-color-adjust: none; }
+    .toggle input:checked + .track { background: Highlight; forced-color-adjust: none; }
+    .toggle input:checked + .track::after { background: HighlightText; }
+    .place span { border: 2px solid transparent; }
+    .place input:checked + span { border-color: Highlight; text-decoration: underline; }
+    .password .is-word { text-decoration-color: CanvasText; }
+    .copy-button { border: 2px solid ButtonText; }
+    .meter span { border: 1px solid CanvasText; }
+    .strength[data-level="1"] .meter span:nth-child(-n+1),
+    .strength[data-level="2"] .meter span:nth-child(-n+2),
+    .strength[data-level="3"] .meter span:nth-child(-n+3),
+    .strength[data-level="4"] .meter span { background: CanvasText; forced-color-adjust: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation: none !important; transition: none !important; }
 }
