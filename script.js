@@ -156,10 +156,13 @@ function generate(announceIt) {
     optionsError.hidden = hasSets;
     copyButton.disabled = !hasSets;
     regenerateButton.disabled = !hasSets;
-    // Dims the last password, so it doesn't look like a match for the current choices
-    passwordOutput.classList.toggle('is-stale', !hasSets);
-    strengthBox.classList.toggle('is-stale', !hasSets);
-    if (!hasSets) return;
+    // With nothing to choose from, clear the old password so it can't be copied by mistake
+    strengthBox.hidden = !hasSets;
+    if (!hasSets) {
+        currentPassword = '';
+        passwordOutput.replaceChildren();
+        return;
+    }
 
     const length = chosenLength();
     const word = chosenWord();
